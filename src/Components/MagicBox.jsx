@@ -4,6 +4,9 @@ import { useTransactions } from "../Context/TransactionContext";
 
 const MagicBox = () => {
   const sceneRef = useRef(null);
+  const engineRef = useRef(null);
+  const renderRef = useRef(null);
+
   const { transactions } = useTransactions();
 
   useEffect(() => {
@@ -20,93 +23,84 @@ const MagicBox = () => {
     } = Matter;
 
     const engine = Engine.create();
-    const world = engine.world;
+    engineRef.current = engine;
 
+    const world = engine.world;
     engine.world.gravity.y = 1;
 
-    const isMobile = window.innerWidth < 640;
-    const width = sceneRef.current.offsetWidth;
-    const height = isMobile ? 320 : 350;
+    const container = sceneRef.current;
+
+    let width = container.offsetWidth;
+    let height = window.innerWidth < 640 ? 380 : 350;
 
     const render = Render.create({
-      element: sceneRef.current,
+      element: container,
       engine,
       options: {
         width,
         height,
         wireframes: false,
-        background: "transparent", // ✅ keep old working bg
+        background: "transparent",
+        pixelRatio: window.devicePixelRatio,
       },
     });
+
+    renderRef.current = render;
 
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    // 🧱 WALLS (same as before)
-    const padding = isMobile ? 30 : 40;
+    // WALLS FUNCTION (dynamic)
+    let walls = [];
+    const createWalls = () => {
+      const wallSize = 100;
 
-    const walls = [
-      Bodies.rectangle(width / 2, height + 50, width, 100, { isStatic: true }),
-      Bodies.rectangle(width / 2, -50, width, 100, { isStatic: true }),
-      Bodies.rectangle(-50, height / 2, 100, height, { isStatic: true }),
-      Bodies.rectangle(width + 50, height / 2, 100, height, { isStatic: true }),
-    ];
+      walls = [
+        Bodies.rectangle(width / 2, height + wallSize / 2, width, wallSize, { isStatic: true }),
+        Bodies.rectangle(width / 2, -wallSize / 2, width, wallSize, { isStatic: true }),
+        Bodies.rectangle(-wallSize / 2, height / 2, wallSize, height, { isStatic: true }),
+        Bodies.rectangle(width + wallSize / 2, height / 2, wallSize, height, { isStatic: true }),
+      ];
 
-    // 🎨 COLORS
+      World.add(world, walls);
+    };
+
+    createWalls();
+
+    // COLORS
     const incomeColor = "#22c55e";
     const expenseColor = "#ef4444";
     const balanceColor = "#8b5cf6";
 
     const radius = 18;
 
-    // 📊 BALANCE
-    const totalIncome = transactions
-      .filter((t) => t.type === "income")
-      .reduce((a, t) => a + t.amount, 0);
-
-    const totalExpense = transactions
-      .filter((t) => t.type === "expense")
-      .reduce((a, t) => a + t.amount, 0);
-
+    const totalIncome = transactions.filter(t => t.type === "income").reduce((a, t) => a + t.amount, 0);
+    const totalExpense = transactions.filter(t => t.type === "expense").reduce((a, t) => a + t.amount, 0);
     const balance = totalIncome - totalExpense;
 
-    // 📦 SIZES
-    const boxWidth = isMobile ? 120 : 150;
-    const boxHeight = isMobile ? 40 : 50;
-    const balanceWidth = isMobile ? 150 : 200;
-    const balanceHeight = isMobile ? 50 : 60;
+    const isMobile = window.innerWidth < 640;
 
-    // 📦 CREATE BOX
+    const boxWidth = isMobile ? 110 : 150;
+    const boxHeight = isMobile ? 40 : 50;
+
+    const balanceWidth = isMobile ? 160 : 200;
+
     const createBox = (x, y, w, h, color, label) => {
       const body = Bodies.rectangle(x, y, w, h, {
         chamfer: { radius },
         render: { fillStyle: color },
-        restitution: 0.4,
-        friction: 0.3,
-        frictionAir: 0.02,
       });
 
       body.labelText = label;
       return body;
     };
 
-    // ✅ FIXED POSITIONING (NO OVERFLOW)
-    const safeX = (index) => {
-      const cols = isMobile ? 2 : 3;
-      const spacing = width / (cols + 1);
-      return spacing * ((index % cols) + 1);
-    };
-
-    const displayTransactions = isMobile
-      ? transactions.slice(0, 6)
-      : transactions;
-
-    const boxes = displayTransactions.map((tx, index) => {
+    const boxes = transactions.slice(0, isMobile ? 6 : transactions.length).map((tx, i) => {
       const color = tx.type === "income" ? incomeColor : expenseColor;
 
       return createBox(
-        safeX(index),
-        -50 - index * 30,
+        width / 2,
+        -50 - i * 40,
         boxWidth,
         boxHeight,
         color,
@@ -114,19 +108,18 @@ const MagicBox = () => {
       );
     });
 
-    // 💜 BALANCE
     const balanceBox = createBox(
       width / 2,
-      -100,
+      -120,
       balanceWidth,
-      balanceHeight,
+      60,
       balanceColor,
       `Balance ₹${balance}`
     );
 
-    World.add(world, [...walls, balanceBox, ...boxes]);
+    World.add(world, [...boxes, balanceBox]);
 
-    // 🖱 MOUSE
+    // MOUSE
     const mouse = Mouse.create(render.canvas);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
@@ -136,19 +129,20 @@ const MagicBox = () => {
     World.add(world, mouseConstraint);
     render.mouse = mouse;
 
-    // 🔒 KEEP INSIDE
+    // 🔒 HARD CLAMP (always use latest width)
     Events.on(engine, "beforeUpdate", () => {
       [...boxes, balanceBox].forEach((body) => {
-        const { x, y } = body.position;
+        const halfW = (body.bounds.max.x - body.bounds.min.x) / 2;
+        const halfH = (body.bounds.max.y - body.bounds.min.y) / 2;
 
         Body.setPosition(body, {
-          x: Math.min(Math.max(x, padding), width - padding),
-          y: Math.min(Math.max(y, padding), height - padding),
+          x: Math.max(halfW, Math.min(width - halfW, body.position.x)),
+          y: Math.max(halfH, Math.min(height - halfH, body.position.y)),
         });
       });
     });
 
-    // ✍️ TEXT WRAP
+    // TEXT
     Events.on(render, "afterRender", () => {
       const ctx = render.context;
 
@@ -157,44 +151,11 @@ const MagicBox = () => {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      const wrapText = (text, maxWidth) => {
-        const words = text.split(" ");
-        const lines = [];
-        let currentLine = words[0];
-
-        for (let i = 1; i < words.length; i++) {
-          const word = words[i];
-          const width = ctx.measureText(currentLine + " " + word).width;
-
-          if (width < maxWidth - 20) {
-            currentLine += " " + word;
-          } else {
-            lines.push(currentLine);
-            currentLine = word;
-          }
-        }
-        lines.push(currentLine);
-        return lines;
-      };
-
       [...boxes, balanceBox].forEach((body) => {
-        const maxWidth = body.bounds.max.x - body.bounds.min.x;
-
         ctx.save();
         ctx.translate(body.position.x, body.position.y);
         ctx.rotate(body.angle);
-
-        const lines = wrapText(body.labelText, maxWidth);
-        const lineHeight = isMobile ? 14 : 16;
-
-        lines.forEach((line, index) => {
-          ctx.fillText(
-            line,
-            0,
-            index * lineHeight - ((lines.length - 1) * lineHeight) / 2
-          );
-        });
-
+        ctx.fillText(body.labelText, 0, 0);
         ctx.restore();
       });
     });
@@ -202,7 +163,21 @@ const MagicBox = () => {
     Engine.run(engine);
     Render.run(render);
 
+    // 🔥 RESIZE OBSERVER (MAIN FIX)
+    const resizeObserver = new ResizeObserver(() => {
+      width = container.offsetWidth;
+      height = window.innerWidth < 640 ? 380 : 350;
+
+      Render.setSize(render, width, height);
+
+      render.canvas.style.width = width + "px";
+      render.canvas.style.height = height + "px";
+    });
+
+    resizeObserver.observe(container);
+
     return () => {
+      resizeObserver.disconnect();
       Render.stop(render);
       Runner.stop(runner);
       World.clear(world);
@@ -215,7 +190,7 @@ const MagicBox = () => {
     <div className="my-10 rounded-2xl bg-gradient-to-b from-purple-900/40 to-black p-1">
       <div
         ref={sceneRef}
-        className="w-full h-[300px] sm:h-[350px] rounded-2xl overflow-hidden"
+        className="w-full h-[380px] sm:h-[350px] rounded-2xl overflow-hidden"
       />
     </div>
   );
