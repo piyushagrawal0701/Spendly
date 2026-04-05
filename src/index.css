@@ -1,0 +1,43 @@
+ @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+@import "tailwindcss";
+
+* {
+font-family: "Poppins", sans-serif;
+}
+
+@theme {
+  /* Backgrounds */
+  --color-bg: #0b0b12;
+  --color-card: #13131a;
+  --color-card-light: #1a1a24;
+
+  /* Primary (Purple Gradient Style) */
+  --color-primary: #7c3aed;        /* main purple */
+  --color-primary-light: #a78bfa;  /* light purple */
+  --color-primary-dark: #5b21b6;   /* dark purple */
+
+  /* Accent */
+  --color-accent: #9333ea;
+
+  /* Text */
+  --color-text: #ffffff;
+  --color-text-muted: #9ca3af;
+
+  /* Status Colors */
+  --color-success: #22c55e;  /* green */
+  --color-danger: #ef4444;   /* red */
+
+  /* Border */
+  --color-border: #26263a;
+}
+
+.no-scrollbar::-webkit-scrollbar{
+  display: none;
+}
+
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-sector:focus {
+  outline: none !important;
+}
