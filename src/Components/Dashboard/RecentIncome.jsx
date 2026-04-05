@@ -3,11 +3,10 @@ import { useNavigate } from "react-router-dom";
 import TransactionInfoCard from "../Cards/TransactionInfoCard";
 import moment from "moment";
 
-const RecentIncome = ({transactions}) => {
+const RecentIncome = ({ transactions }) => {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
-
-  const incomeData = transactions.filter(t => t.type === "income");
+  const incomeData = transactions.filter((t) => t.type === "income");
 
   return (
     <>
@@ -26,14 +25,14 @@ const RecentIncome = ({transactions}) => {
         </div>
 
         <div className="mt-6">
-           {incomeData?.slice(0, 5)?.map((item) => (
+          {incomeData?.slice(0, 5)?.map((item) => (
             <TransactionInfoCard
+              icon={item.icon}
               key={item.id}
               title={item.title}
               date={moment(item.data).format("DD MM YYYY")}
               amount={item.amount}
               type={item.type}
-              icon={item.icon}
             />
           ))}
         </div>

@@ -24,8 +24,9 @@ const MagicBox = () => {
 
     engine.world.gravity.y = 1;
 
+    const isMobile = window.innerWidth < 640;
     const width = sceneRef.current.offsetWidth;
-    const height = 350;
+    const height = isMobile ? 320 : 350;
 
     const render = Render.create({
       element: sceneRef.current,
@@ -34,15 +35,15 @@ const MagicBox = () => {
         width,
         height,
         wireframes: false,
-        background: "transparent",
+        background: "transparent", // ✅ keep old working bg
       },
     });
 
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    // 🧱 INVISIBLE SAFE BOUNDARY (NO UI BORDER)
-    const padding = 40;
+    // 🧱 WALLS (same as before)
+    const padding = isMobile ? 30 : 40;
 
     const walls = [
       Bodies.rectangle(width / 2, height + 50, width, 100, { isStatic: true }),
@@ -58,16 +59,22 @@ const MagicBox = () => {
 
     const radius = 18;
 
-    // 📊 CALCULATE BALANCE
+    // 📊 BALANCE
     const totalIncome = transactions
       .filter((t) => t.type === "income")
-      .reduce((acc, t) => acc + t.amount, 0);
+      .reduce((a, t) => a + t.amount, 0);
 
     const totalExpense = transactions
       .filter((t) => t.type === "expense")
-      .reduce((acc, t) => acc + t.amount, 0);
+      .reduce((a, t) => a + t.amount, 0);
 
     const balance = totalIncome - totalExpense;
+
+    // 📦 SIZES
+    const boxWidth = isMobile ? 120 : 150;
+    const boxHeight = isMobile ? 40 : 50;
+    const balanceWidth = isMobile ? 150 : 200;
+    const balanceHeight = isMobile ? 50 : 60;
 
     // 📦 CREATE BOX
     const createBox = (x, y, w, h, color, label) => {
@@ -83,26 +90,36 @@ const MagicBox = () => {
       return body;
     };
 
-    // 📦 TRANSACTION BOXES
-    const boxes = transactions.map((tx, index) => {
+    // ✅ FIXED POSITIONING (NO OVERFLOW)
+    const safeX = (index) => {
+      const cols = isMobile ? 2 : 3;
+      const spacing = width / (cols + 1);
+      return spacing * ((index % cols) + 1);
+    };
+
+    const displayTransactions = isMobile
+      ? transactions.slice(0, 6)
+      : transactions;
+
+    const boxes = displayTransactions.map((tx, index) => {
       const color = tx.type === "income" ? incomeColor : expenseColor;
 
       return createBox(
-        120 + (index % 3) * 130,
+        safeX(index),
         -50 - index * 30,
-        150,
-        50,
+        boxWidth,
+        boxHeight,
         color,
         `${tx.title} ₹${tx.amount}`
       );
     });
 
-    // 💜 BALANCE BOX (CENTER)
+    // 💜 BALANCE
     const balanceBox = createBox(
       width / 2,
       -100,
-      200,
-      60,
+      balanceWidth,
+      balanceHeight,
       balanceColor,
       `Balance ₹${balance}`
     );
@@ -111,19 +128,15 @@ const MagicBox = () => {
 
     // 🖱 MOUSE
     const mouse = Mouse.create(render.canvas);
-
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
-      constraint: {
-        stiffness: 0.2,
-        render: { visible: false },
-      },
+      constraint: { stiffness: 0.2, render: { visible: false } },
     });
 
     World.add(world, mouseConstraint);
     render.mouse = mouse;
 
-    // 🔒 KEEP INSIDE (NO ESCAPE)
+    // 🔒 KEEP INSIDE
     Events.on(engine, "beforeUpdate", () => {
       [...boxes, balanceBox].forEach((body) => {
         const { x, y } = body.position;
@@ -135,20 +148,53 @@ const MagicBox = () => {
       });
     });
 
-    // ✍️ TEXT
+    // ✍️ TEXT WRAP
     Events.on(render, "afterRender", () => {
       const ctx = render.context;
 
-      ctx.font = "14px Inter, sans-serif";
+      ctx.font = isMobile ? "12px Inter" : "14px Inter";
       ctx.fillStyle = "#fff";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
+      const wrapText = (text, maxWidth) => {
+        const words = text.split(" ");
+        const lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+          const word = words[i];
+          const width = ctx.measureText(currentLine + " " + word).width;
+
+          if (width < maxWidth - 20) {
+            currentLine += " " + word;
+          } else {
+            lines.push(currentLine);
+            currentLine = word;
+          }
+        }
+        lines.push(currentLine);
+        return lines;
+      };
+
       [...boxes, balanceBox].forEach((body) => {
+        const maxWidth = body.bounds.max.x - body.bounds.min.x;
+
         ctx.save();
         ctx.translate(body.position.x, body.position.y);
         ctx.rotate(body.angle);
-        ctx.fillText(body.labelText, 0, 0);
+
+        const lines = wrapText(body.labelText, maxWidth);
+        const lineHeight = isMobile ? 14 : 16;
+
+        lines.forEach((line, index) => {
+          ctx.fillText(
+            line,
+            0,
+            index * lineHeight - ((lines.length - 1) * lineHeight) / 2
+          );
+        });
+
         ctx.restore();
       });
     });
@@ -166,17 +212,12 @@ const MagicBox = () => {
   }, [transactions]);
 
   return (
-    <div
-    className="my-10"
-      ref={sceneRef}
-      style={{
-        width: "100%",
-        height: "350px",
-        borderRadius: "20px", // ✅ GOOD UI BORDER
-        overflow: "hidden",
-        background: "#0f172a", // match your UI
-      }}
-    />
+    <div className="my-10 rounded-2xl bg-gradient-to-b from-purple-900/40 to-black p-1">
+      <div
+        ref={sceneRef}
+        className="w-full h-[300px] sm:h-[350px] rounded-2xl overflow-hidden"
+      />
+    </div>
   );
 };
 

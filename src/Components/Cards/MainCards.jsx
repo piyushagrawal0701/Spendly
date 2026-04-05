@@ -1,6 +1,7 @@
 import balanceIcon from "../../assets/mainCardsIcons/document-calculator.gif"
 import incomeIcon from "../../assets/mainCardsIcons/income.gif"
 import expenseIcon from "../../assets/mainCardsIcons/money-bag.gif"
+
 const MainCards = ({transactions }) => {
 
     const income = transactions

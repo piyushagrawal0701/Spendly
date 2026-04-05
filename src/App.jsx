@@ -8,6 +8,7 @@ import Admin from './Pages/Admin'
 import Footer from './Components/Footer'
 import ScrollToTop from './Components/ScrollToTop'
 import { Toaster } from 'react-hot-toast'
+import Contact from './Pages/Contact'
 
 function App() {
 
@@ -22,6 +23,7 @@ function App() {
             <Route path="/admin" element={<Admin  />} />
             <Route path="/expense" element={<Expense />} />
             <Route path="/income" element={<Income />} />
+            <Route path="/contact" element={<Contact />} />
             
           </Routes>
           <ScrollToTop/>

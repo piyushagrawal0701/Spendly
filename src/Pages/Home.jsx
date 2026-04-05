@@ -1,6 +1,7 @@
 import MainCards from "../Components/Cards/MainCards";
 import ExpenseTransactions from "../Components/Dashboard/ExpenseTransactions";
 import FinanceOverview from "../Components/Dashboard/FinanceOverview";
+import HeroSection from "../Components/Dashboard/HeroSection";
 import RecentIncome from "../Components/Dashboard/RecentIncome";
 import RecentIncomeWithChart from "../Components/Dashboard/RecentIncomeWithChart";
 import RecentTransactions from "../Components/Dashboard/RecentTransactions";
@@ -28,6 +29,7 @@ const Home = () => {
     <div className="px-2">
             <MagicBox/>
     </div>
+    <HeroSection/>
     </>
   );
 };

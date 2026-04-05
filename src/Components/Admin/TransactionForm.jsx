@@ -1,6 +1,7 @@
 import { useState } from "react";
 import IconPicker from "./IconPicker";
 import toast from "react-hot-toast";
+import ClearAllButton from "./ClearAllButton";
 
 const TransactionForm = ({ onAdd }) => {
   const [formData, setFormData] = useState({
@@ -111,6 +112,8 @@ const TransactionForm = ({ onAdd }) => {
       >
         Add Transaction
       </button>
+        <ClearAllButton/>
+
     </form>
   );
 };

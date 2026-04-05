@@ -11,7 +11,7 @@ const TransactionInfoCard = ({ title, date, amount, type, icon }) => {
         
         {/* Icon */}
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-[#1a1a24] text-gray-300">
-          {icon ? icon : "₹"}
+          {icon ? icon : "💰"}
         </div>
 
         {/* Info */}

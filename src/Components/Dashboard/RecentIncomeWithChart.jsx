@@ -37,14 +37,11 @@ const RecentIncomeWithChart = ({ transactions }) => {
         </h5>
 
         <button
-          className="flex items-center gap-3 text-[12px] font-medium text-white 
-          bg-[#1a1a24] hover:bg-gradient-to-r hover:from-[#7c3aed] hover:to-[#9333ea] 
-          px-4 py-1.5 rounded-lg border border-[#26263a] 
-          hover:border-transparent transition-all duration-300 cursor-pointer"
-          onClick={() => navigate("/income")}
-        >
-          See All <LuArrowRight className="text-base" />
-        </button>
+                    className="flex items-center gap-3 text-[12px] font-medium text-primary hover:text-white bg-white hover:bg-gradient-to-r hover:from-[#7c3aed] hover:to-[#9333ea] max-md:text-nowrap px-4 py-1.5 rounded-lg border border-[#26263a] hover:border-transparent transition-all duration-300 cursor-pointer"
+                    onClick={() => navigate("/income")}
+                  >
+                    See All <LuArrowRight className="text-base" />
+                  </button>
       </div>
 
       {/* Chart */}
