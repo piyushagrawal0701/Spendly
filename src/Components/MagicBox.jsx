@@ -143,22 +143,58 @@ const MagicBox = () => {
     });
 
     // TEXT
-    Events.on(render, "afterRender", () => {
-      const ctx = render.context;
+ Events.on(render, "afterRender", () => {
+  const ctx = render.context;
 
-      ctx.font = isMobile ? "12px Inter" : "14px Inter";
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+  ctx.font = isMobile ? "12px Inter" : "14px Inter";
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
 
-      [...boxes, balanceBox].forEach((body) => {
-        ctx.save();
-        ctx.translate(body.position.x, body.position.y);
-        ctx.rotate(body.angle);
-        ctx.fillText(body.labelText, 0, 0);
-        ctx.restore();
-      });
+  const wrapText = (text, maxWidth) => {
+    const words = text.split(" ");
+    const lines = [];
+    let line = "";
+
+    words.forEach((word) => {
+      const testLine = line ? line + " " + word : word;
+      const width = ctx.measureText(testLine).width;
+
+      // 👇 thoda extra padding diya so kabhi overflow na ho
+      if (width < maxWidth - 20) {
+        line = testLine;
+      } else {
+        if (line) lines.push(line);
+        line = word;
+      }
     });
+
+    if (line) lines.push(line);
+
+    return lines.slice(0, 2); // max 2 lines
+  };
+
+  [...boxes, balanceBox].forEach((body) => {
+    const maxWidth = body.bounds.max.x - body.bounds.min.x;
+
+    ctx.save();
+    ctx.translate(body.position.x, body.position.y);
+    ctx.rotate(body.angle);
+
+    const lines = wrapText(body.labelText, maxWidth);
+    const lineHeight = isMobile ? 13 : 15;
+
+    lines.forEach((line, i) => {
+      ctx.fillText(
+        line,
+        0,
+        i * lineHeight - ((lines.length - 1) * lineHeight) / 2
+      );
+    });
+
+    ctx.restore();
+  });
+});
 
     Engine.run(engine);
     Render.run(render);
